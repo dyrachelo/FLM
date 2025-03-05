@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="dashboard"
+        android:id="@+id/dashboard"/>
+    <item android:title="report"
+        android:id="@+id/report"/>
+    <item android:title="history"
+        android:id="@+id/history"
+        android:icon="@drawable/history"/>
+    <item android:title="settings"
+        android:id="@+id/settings"/>
+</menu>
