@@ -2,12 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:title="dashboard"
-        android:id="@+id/dashboard"/>
+        android:id="@+id/dashboard"
+        android:icon="@drawable/dashboard"/>
     <item android:title="report"
-        android:id="@+id/report"/>
+        android:id="@+id/report"
+        android:icon="@drawable/report"/>
     <item android:title="history"
         android:id="@+id/history"
         android:icon="@drawable/history"/>
     <item android:title="settings"
-        android:id="@+id/settings"/>
+        android:id="@+id/settings"
+        android:icon="@drawable/settings"/>
 </menu>

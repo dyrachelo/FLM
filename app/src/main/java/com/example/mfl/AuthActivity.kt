@@ -71,12 +71,25 @@ class AuthActivity : AppCompatActivity() {
         }
     }
 
+
+    override fun onStart() {
+        super.onStart()
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // Если пользователь уже авторизован, перенаправляем его на главный экран
+            val intent = Intent(this, Panel::class.java)
+            startActivity(intent)
+            finish() // Закрываем экран авторизации
+        }
+    }
+
     private fun signIn(auth: FirebaseAuth, email: String, pass: String) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d("MyLog", "Авторизация успешна")
                     val intent = Intent(this, Panel::class.java)
+                    intent.putExtra("userEmail", email)
                     startActivity(intent)
                 } else {
                     Log.d("MyLog", "Ошибка авторизации: ${task.exception?.message}")
@@ -127,6 +140,7 @@ class AuthActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     Log.d("MyLog", "signInWithCredential:success")
                     val intent = Intent(this, Panel::class.java)
+
                     startActivity(intent)
                 } else {
                     Log.w("MyLog", "signInWithCredential:failure", task.exception)

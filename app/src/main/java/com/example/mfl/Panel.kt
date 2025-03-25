@@ -21,6 +21,10 @@ class Panel : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+
+
+
         replaceFragment(Dashboard())
         binding = ActivityPanelBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -43,7 +47,6 @@ class Panel : AppCompatActivity() {
             true
         }
     }
-
     private fun replaceFragment (fragment : Fragment){
 
         val fragmentManager = supportFragmentManager
@@ -54,3 +57,4 @@ class Panel : AppCompatActivity() {
     }
 
 }
+
