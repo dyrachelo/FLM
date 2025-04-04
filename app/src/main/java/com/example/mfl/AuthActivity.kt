@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
 class AuthActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth

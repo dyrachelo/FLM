@@ -1,8 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.MFL" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/colorPrimary</item> <!-- Основной цвет -->
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item> <!-- Темный вариант основного цвета -->
+        <item name="colorOnPrimary">@color/colorOnPrimary</item> <!-- Цвет текста на основном фоне -->
+        <item name="colorSecondary">@color/colorSecondary</item> <!-- Вторичный цвет -->
+        <item name="colorOnSecondary">@color/colorOnSecondary</item> <!-- Цвет текста на вторичном фоне -->
+        <item name="android:windowBackground">@color/colorBackground</item> <!-- Фон окна -->
+
     </style>
 
     <style name="Theme.MFL" parent="Base.Theme.MFL" />

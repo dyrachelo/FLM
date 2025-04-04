@@ -45,10 +45,14 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
-
+    implementation ("androidx.constraintlayout:constraintlayout:2.1.4") // Проверьте на актуальную версию
     implementation(libs.firebase.auth)
-
+    //compose
+    implementation ("androidx.compose.material3:material3:1.1.1")
+    implementation ("androidx.compose.ui:ui:1.3.0")
+    implementation ("androidx.compose.material:material:1.3.0")
+    implementation ("androidx.compose.ui:ui-tooling-preview:1.3.0")
+    implementation ("androidx.activity:activity-compose:1.6.0")
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

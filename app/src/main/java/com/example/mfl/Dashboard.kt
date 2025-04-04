@@ -16,9 +16,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 
-
-
-
 class Dashboard : Fragment() {
     private var walletBalance = 0.0
     private var foodExpense = 0.0

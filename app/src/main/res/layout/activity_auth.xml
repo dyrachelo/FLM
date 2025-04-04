@@ -6,19 +6,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".AuthActivity"
-    android:paddingBottom="220dp"
-    android:paddingTop="220dp">
+    >
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.25" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.75" />
 
     <TextView
-        android:id="@+id/regText"
+        android:id="@+id/logText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Login"
-        android:textSize="30dp"
+        android:textSize="30sp"
         app:layout_constraintBottom_toTopOf="@id/user_email_auth"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@id/guideline_top" />
     <EditText
         android:id="@+id/user_email_auth"
         android:layout_width="wrap_content"
@@ -28,7 +40,7 @@
         android:height="40dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/regText"
+        app:layout_constraintTop_toBottomOf="@id/logText"
         app:layout_constraintBottom_toTopOf="@+id/user_pass_auth"
         android:inputType="textEmailAddress"/>
 
@@ -50,34 +62,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Регистрация"
-        android:textSize="16dp"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/user_pass_auth"
         app:layout_constraintBottom_toTopOf="@id/button_auth_google"
         />
-    <Button
+    <com.google.android.material.button.MaterialButton
+        style="@style/AuthButtonStyle"
         android:id="@+id/button_auth_google"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="SIGN IN WITH GOOGLE"
-        android:height="40dp"
-        android:width="240dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/button_auth"
         app:layout_constraintTop_toBottomOf="@id/register_text"
+        android:drawableLeft="@drawable/google_icon"
+        android:drawablePadding="8dp"
         />
-    <Button
+    <com.google.android.material.button.MaterialButton
+        style="@style/AuthButtonStyle"
+        android:text="@string/loginString"
         android:id="@+id/button_auth"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="LOGIN"
-        android:height="40dp"
-        android:width="240dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/guideline_bottom"
         app:layout_constraintTop_toBottomOf="@id/button_auth_google"
         />
 
