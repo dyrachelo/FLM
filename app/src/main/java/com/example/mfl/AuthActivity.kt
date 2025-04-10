@@ -78,9 +78,11 @@ class AuthActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             // Если пользователь уже авторизован, перенаправляем его на главный экран
-            val intent = Intent(this, Panel::class.java)
+            val intent = Intent(this, Panel::class.java).apply {
+                putExtra("userEmail", currentUser.email ?: "email_not_available")
+            }
             startActivity(intent)
-            finish() // Закрываем экран авторизации
+            finish()
         }
     }
 
@@ -140,11 +142,19 @@ class AuthActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     Log.d("MyLog", "signInWithCredential:success")
-                    val intent = Intent(this, Panel::class.java)
+                    val user = auth.currentUser
+                    val email = user?.email ?: "no_email_provided"
 
+                    Log.d("MyLog", "User email: $email")
+
+                    val intent = Intent(this, Panel::class.java).apply {
+                        putExtra("userEmail", email)  // Передаем email
+                    }
                     startActivity(intent)
+                    finish()
                 } else {
                     Log.w("MyLog", "signInWithCredential:failure", task.exception)
+                    Toast.makeText(this, "Ошибка авторизации через Google", Toast.LENGTH_SHORT).show()
                 }
             }
     }

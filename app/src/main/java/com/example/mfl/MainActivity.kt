@@ -13,7 +13,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
 
-
 class MainActivity : AppCompatActivity() {
 
     // Объявляем переменную auth
@@ -48,9 +47,6 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "не все поля заполнены", Toast.LENGTH_LONG).show()
             } else {
                 signUp(auth, email, pass)
-                userLogin.text.clear()
-                userEmail.text.clear()
-                userPass.text.clear()
             }
         }
 
@@ -65,9 +61,27 @@ class MainActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d("MyLog", "Регистрация успешна")
-                    // Дополнительные действия после успешной регистрации
+                    // Если регистрация успешна, сразу авторизуем пользователя
+                    signIn(auth, email, pass)
                 } else {
                     Log.d("MyLog", "Ошибка регистрации: ${task.exception?.message}")
+                    Toast.makeText(this, "Ошибка регистрации: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+    }
+
+    private fun signIn(auth: FirebaseAuth, email: String, pass: String) {
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("MyLog", "Авторизация успешна")
+                    val intent = Intent(this, Dashboard::class.java)
+                    intent.putExtra("userEmail", email)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    Log.d("MyLog", "Ошибка авторизации: ${task.exception?.message}")
+                    Toast.makeText(this, "Ошибка авторизации: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
             }
     }

@@ -7,10 +7,10 @@
     <color name="colorPrimary">#121212</color>
     <color name="colorPrimaryVariant">#C51162</color>
     <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorSecondary">#9C27B0</color>
+    <color name="colorSecondary">#2C2B2E</color>
     <color name="colorOnSecondary">#FFFFFF</color>
     <color name="colorBackground">#FFFFFF</color>
-    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurface">#8B8B8B</color>
     <color name="colorError">#B00020</color>
     <color name="colorOnBackground">#000000</color>
     <color name="colorOnSurface">#000000</color>
