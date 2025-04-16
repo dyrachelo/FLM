@@ -53,7 +53,7 @@ dependencies {
     implementation ("androidx.compose.material:material:1.3.0")
     implementation ("androidx.compose.ui:ui-tooling-preview:1.3.0")
     implementation ("androidx.activity:activity-compose:1.6.0")
-
+    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)

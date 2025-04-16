@@ -16,6 +16,7 @@ import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.util.Log
+import java.util.Date
 
 
 
@@ -32,6 +33,10 @@ class Dashboard : Fragment() {
     private var travelExpense = 0.0
 
     private var eWalletBalance = 0.0
+    private var incomeAmount = 0.0
+    private var totalExpenses = 0.0
+    private lateinit var incomeTextView: TextView
+    private lateinit var totalExpensesTextView: TextView
 
     private lateinit var dbHelper: DbHelper
     private lateinit var email: String
@@ -81,6 +86,25 @@ class Dashboard : Fragment() {
         val textTransport = view.findViewById<TextView>(R.id.TransportExpenseText)
         val textTravel = view.findViewById<TextView>(R.id.TravelExpenseText)
 
+        incomeTextView = view.findViewById(R.id.income)
+        totalExpensesTextView = view.findViewById(R.id.total_expenses)
+
+// In your onCreateView method, replace the balance loading code with:
+        val fullBalance = dbHelper.getUserFullBalance(email)
+        if (fullBalance != null) {
+            walletBalance = fullBalance.first
+            eWalletBalance = fullBalance.second
+            incomeAmount = fullBalance.third
+            totalExpenses = dbHelper.getTotalExpenses(email)
+        }
+
+// Update your UI
+        incomeTextView.text = "$incomeAmount Br"
+        totalExpensesTextView.text = "Total expenses: $totalExpenses Br"
+
+// Обновляем UI
+        incomeTextView.text = "$incomeAmount Br"
+        totalExpensesTextView.text = "Total expenses: $totalExpenses Br"
         // Загрузка баланса пользователя
         val balance = dbHelper.getUserBalance(email)
         if (balance != null) {
@@ -127,10 +151,42 @@ class Dashboard : Fragment() {
             showAmountInputDialog("eWallet", "eWallet", eWallet)
         }
 
-        income.setOnClickListener {
-            showAmountInputDialog("Income", "income", income)
+        val imgIncome = view.findViewById<ImageView>(R.id.income_img)
+        imgIncome.setOnLongClickListener {
+            val clipData = ClipData.newPlainText("source", "income")
+            val shadowBuilder = View.DragShadowBuilder(it)
+            it.startDragAndDrop(clipData, shadowBuilder, it, 0)
+            true
+        }
+        imgIncome.setOnClickListener {
+            showIncomeInputDialog()
+        }
+// В onCreateView после инициализации ImageView кошельков
+        imgWallet.setOnDragListener { _, event ->
+            when (event.action) {
+                DragEvent.ACTION_DROP -> {
+                    val source = event.clipData.getItemAt(0).text.toString()
+                    if (source == "income") {
+                        showDistributeDialog("Wallet", "wallet")
+                    }
+                    true
+                }
+                else -> true
+            }
         }
 
+        imgEWallet.setOnDragListener { _, event ->
+            when (event.action) {
+                DragEvent.ACTION_DROP -> {
+                    val source = event.clipData.getItemAt(0).text.toString()
+                    if (source == "income") {
+                        showDistributeDialog("eWallet", "eWallet")
+                    }
+                    true
+                }
+                else -> true
+            }
+        }
         setupDropTarget(imgFood, "Food")
         setupDropTarget(imgHouse, "House")
         setupDropTarget(imgClothes, "Clothes")
@@ -178,8 +234,9 @@ class Dashboard : Fragment() {
                             textView.text = "$eWalletBalance Br"
                         }
                         "income" -> {
-                            walletBalance += amount
-                            textView.text = "$walletBalance Br"
+                            incomeAmount = amount
+                            textView.text = "$incomeAmount Br"
+                            dbHelper.updateIncome(email, incomeAmount) // Нужно добавить этот метод в DbHelper
                         }
                     }
                     dbHelper.addOrUpdateUser(email, walletBalance, eWalletBalance)
@@ -276,5 +333,83 @@ class Dashboard : Fragment() {
         transportExpense = dbHelper.getCategoryExpense(email, "Transport", period)
         travelExpense = dbHelper.getCategoryExpense(email, "Travel", period)
     }
+    private fun showDistributeDialog(walletName: String, walletType: String) {
+        val input = EditText(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Distribute to $walletName")
+            .setMessage("How much to distribute from income? Available: $incomeAmount Br")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                val amountStr = input.text.toString()
+                val amount = amountStr.toDoubleOrNull() ?: 0.0
 
+                if (amount > 0 && amount <= incomeAmount) {
+                    when (walletType) {
+                        "wallet" -> {
+                            walletBalance += amount
+                            walletTextView.text = "$walletBalance Br"
+                        }
+                        "eWallet" -> {
+                            eWalletBalance += amount
+                            eWalletTextView.text = "$eWalletBalance Br"
+                        }
+                    }
+
+                    incomeAmount -= amount
+                    totalExpenses += amount
+
+                    incomeTextView.text = "$incomeAmount Br"
+                    totalExpensesTextView.text = "Total expenses: $totalExpenses Br"
+
+                    // Сохраняем в базу данных
+                    dbHelper.addOrUpdateUser(email, walletBalance, eWalletBalance)
+                    dbHelper.updateIncome(email, incomeAmount)
+                    dbHelper.updateTotalExpenses(email, totalExpenses)
+
+                    // Добавляем транзакцию
+                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    dbHelper.addTransaction(email, "income_distribution", walletType, amount, date, "Distributed from income")
+                } else {
+                    showToast("Invalid amount or insufficient income")
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+    }
+    private fun showIncomeInputDialog() {
+        val input = EditText(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Enter Income Amount")
+            .setMessage("How much income did you receive?")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                val amountStr = input.text.toString()
+                val amount = amountStr.toDoubleOrNull() ?: 0.0
+                if (amount >= 0) {
+                    incomeAmount = amount
+                    incomeTextView.text = "$incomeAmount Br"
+
+                    // Сохраняем в базу данных
+                    dbHelper.updateIncome(email, incomeAmount)
+                    dbHelper.addOrUpdateUser(email, walletBalance, eWalletBalance)
+
+                    // Добавляем транзакцию
+                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    dbHelper.addTransaction(
+                        email,
+                        "income",
+                        "income",
+                        amount,
+                        date,
+                        "Salary income"
+                    )
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+    }
 }

@@ -9,17 +9,19 @@ import java.util.Calendar
 import java.util.Locale
 
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 5) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 6) {
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("""
-            CREATE TABLE userInfo (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL UNIQUE,
-                cash REAL NOT NULL,
-                ewallet REAL NOT NULL
-            )
-        """.trimIndent())
+        CREATE TABLE userInfo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            cash REAL NOT NULL,
+            ewallet REAL NOT NULL,
+            income REAL DEFAULT 0,
+            total_expenses REAL DEFAULT 0
+        )
+    """.trimIndent())
 
         db?.execSQL("""
             CREATE TABLE transactions (
@@ -271,4 +273,62 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 5) {
         cursor.close()
         return list
     }
+
+
+    // Добавить в класс DbHelper
+    fun updateIncome(email: String, amount: Double) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("income", amount)
+        }
+
+        // Проверяем, есть ли уже запись для этого пользователя
+        val cursor = db.rawQuery("SELECT * FROM userInfo WHERE email = ?", arrayOf(email))
+        if (cursor.moveToFirst()) {
+            db.update("userInfo", values, "email = ?", arrayOf(email))
+        } else {
+            values.put("email", email)
+            values.put("cash", 0.0)
+            values.put("ewallet", 0.0)
+            db.insert("userInfo", null, values)
+        }
+        cursor.close()
+    }
+
+    fun getIncomeAmount(email: String): Double {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT income FROM userInfo WHERE email = ?", arrayOf(email))
+        return if (cursor.moveToFirst()) cursor.getDouble(0) else 0.0
+    }
+
+    fun updateTotalExpenses(email: String, amount: Double) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("total_expenses", amount)
+        }
+        db.update("userInfo", values, "email = ?", arrayOf(email))
+    }
+
+    fun getTotalExpenses(email: String): Double {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT total_expenses FROM userInfo WHERE email = ?", arrayOf(email))
+        return if (cursor.moveToFirst()) cursor.getDouble(0) else 0.0
+    }
+
+    // Add these methods to your DbHelper class
+    fun getUserFullBalance(email: String): Triple<Double, Double, Double>? {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT cash, ewallet, income, total_expenses FROM userInfo WHERE email = ?", arrayOf(email))
+        return if (cursor.moveToFirst()) {
+            Triple(
+                cursor.getDouble(0),  // cash
+                cursor.getDouble(1),  // ewallet
+                cursor.getDouble(2)   // income
+            )
+        } else {
+            null
+        }
+    }
+
+
 }

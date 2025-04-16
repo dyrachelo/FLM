@@ -15,4 +15,6 @@
     <color name="colorOnBackground">#000000</color>
     <color name="colorOnSurface">#000000</color>
     <color name="colorAccent">#6D121212</color>
+    <color name="red">#FF5252</color>
+    <color name="green">#4CAF50</color>
 </resources>

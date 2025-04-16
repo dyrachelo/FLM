@@ -34,18 +34,32 @@
                 android:layout_margin="18dp">
 
                 <ImageView
+                    android:id="@+id/income_img"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:src="@drawable/income"
-                    android:contentDescription="Salary"
                     android:layout_marginEnd="8dp"/>
-
-                <TextView
-                    android:id="@+id/income"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/total_expenses"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/income"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:layout_gravity="bottom"
+                        />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Блок счетов -->
@@ -139,6 +153,7 @@
                         android:id="@+id/foodExpenseText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="0 Br"
                         android:textColor="#FFFFFF"/>
                 </LinearLayout>
 
@@ -159,7 +174,7 @@
                         android:id="@+id/HouseExpenseText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8 Br"
+                        android:text="0 Br"
                         android:textColor="#FFFFFF"/>
                 </LinearLayout>
 
