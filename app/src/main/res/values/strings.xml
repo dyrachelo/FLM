@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">MFL</string>
     <string name="default_web_client_id">1023227618320-s10edn9a4klk0300euqiavc9217v1br3.apps.googleusercontent.com</string>
-
+    <string name="period_labels">Месяц|Квартал|Полгода|Год</string>
     <string name="loginString">LOGIN</string>
 </resources>

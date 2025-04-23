@@ -7,7 +7,7 @@
     <item android:title="report"
         android:id="@+id/report"
         android:icon="@drawable/report"/>
-    <item android:title="history"
+    <item android:title="debts"
         android:id="@+id/history"
         android:icon="@drawable/history"/>
     <item android:title="settings"

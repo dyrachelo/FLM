@@ -47,9 +47,7 @@ class Dashboard : Fragment() {
         super.onCreate(savedInstanceState)
         dbHelper = DbHelper(requireContext())
         val rawEmail = requireActivity().intent.getStringExtra("userEmail")
-        Log.d("DashboardFragment", "Retrieved email from intent: $rawEmail")
-
-        email = rawEmail.toString() // Будь осторожен: .toString() вернёт "null" как строку, если null
+        email = rawEmail.toString()
     }
 
     override fun onCreateView(
@@ -212,6 +210,10 @@ class Dashboard : Fragment() {
             }
         }
     }
+    private fun getCurrentDate(): String {
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        return format.format(Date())
+    }
 
     // Метод для изменения баланса без проверки на достаточность средств
     private fun showAmountInputDialog(category: String, sourceWallet: String, textView: TextView) {
@@ -262,7 +264,7 @@ class Dashboard : Fragment() {
 
                     if (wallet == "wallet" && amount <= walletBalance) {
                         walletBalance -= amount
-                        val date = Calendar.getInstance().time.toString()
+                        val date = getCurrentDate()
                         val dateFormat = SimpleDateFormat("yyyy-MM", Locale.getDefault())
                         val period = dateFormat.format(Calendar.getInstance().time)
 
@@ -270,7 +272,7 @@ class Dashboard : Fragment() {
                         dbHelper.updateCategoryExpense(email, category, period, amount)
                     } else if (wallet == "ewallet" && amount <= eWalletBalance) {
                         eWalletBalance -= amount
-                        val date = Calendar.getInstance().time.toString()
+                        val date = getCurrentDate()
                         val dateFormat = SimpleDateFormat("yyyy-MM", Locale.getDefault())
                         val period = dateFormat.format(Calendar.getInstance().time)
 
@@ -396,7 +398,7 @@ class Dashboard : Fragment() {
                     dbHelper.addOrUpdateUser(email, walletBalance, eWalletBalance)
 
                     // Добавляем транзакцию
-                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val date = getCurrentDate()
                     dbHelper.addTransaction(
                         email,
                         "income",

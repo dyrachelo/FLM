@@ -8,37 +8,30 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.credentials.Credential
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
 
 class AuthActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
-    private lateinit var credentialManager: CredentialManager
+    private lateinit var oneTapClient: SignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        auth = FirebaseAuth.getInstance()
-        credentialManager = CredentialManager.create(this)
-
         enableEdgeToEdge()
         setContentView(R.layout.activity_auth)
+
+        auth = FirebaseAuth.getInstance()
+        oneTapClient = Identity.getSignInClient(this)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -52,8 +45,7 @@ class AuthActivity : AppCompatActivity() {
         val linkToReg: TextView = findViewById(R.id.register_text)
 
         linkToReg.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, MainActivity::class.java))
         }
 
         button.setOnClickListener {
@@ -63,30 +55,27 @@ class AuthActivity : AppCompatActivity() {
             if (email.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, "Не все поля заполнены", Toast.LENGTH_LONG).show()
             } else {
-                signIn(auth, email, pass)
+                signInWithEmail(email, pass)
             }
         }
 
         buttonGoogle.setOnClickListener {
-            signInWithGoogle()
+            startGoogleSignIn()
         }
     }
 
-
     override fun onStart() {
         super.onStart()
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // Если пользователь уже авторизован, перенаправляем его на главный экран
+        auth.currentUser?.let {
             val intent = Intent(this, Panel::class.java).apply {
-                putExtra("userEmail", currentUser.email ?: "email_not_available")
+                putExtra("userEmail", it.email ?: "email_not_available")
             }
             startActivity(intent)
             finish()
         }
     }
 
-    private fun signIn(auth: FirebaseAuth, email: String, pass: String) {
+    private fun signInWithEmail(email: String, pass: String) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -94,67 +83,70 @@ class AuthActivity : AppCompatActivity() {
                     val intent = Intent(this, Panel::class.java)
                     intent.putExtra("userEmail", email)
                     startActivity(intent)
+                    finish()
                 } else {
                     Log.d("MyLog", "Ошибка авторизации: ${task.exception?.message}")
+                    Toast.makeText(this, "Ошибка авторизации", Toast.LENGTH_SHORT).show()
                 }
             }
     }
 
-    private fun signInWithGoogle() {
-        // Создаем запрос для Google Sign-In
-        val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(getString(R.string.default_web_client_id)) // Укажите ваш Web Client ID
-            .build()
-
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
-            .build()
-
-        // Используем корутины для вызова suspend-функции
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                // Вызываем getCredential в корутине
-                val credentialResponse = withContext(Dispatchers.IO) {
-                    credentialManager.getCredential(
-                        context = this@AuthActivity,
-                        request = request
-                    )
-                }
-
-                // Обрабатываем результат
-                val credential = credentialResponse.credential
-                if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                    firebaseAuthWithGoogle(googleIdTokenCredential.idToken)
-                } else {
-                    Log.e("MyLog", "Unexpected credential type")
-                }
-            } catch (e: Exception) {
-                Log.e("MyLog", "Google sign in failed", e)
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        try {
+            val credential = oneTapClient.getSignInCredentialFromIntent(result.data)
+            val idToken = credential.googleIdToken
+            if (idToken != null) {
+                firebaseAuthWithGoogle(idToken)
+            } else {
+                Log.e("MyLog", "Google ID Token is null")
+                Toast.makeText(this, "Ошибка Google авторизации", Toast.LENGTH_SHORT).show()
             }
+        } catch (e: Exception) {
+            Log.e("MyLog", "Ошибка получения учетных данных", e)
         }
+    }
+
+    private fun startGoogleSignIn() {
+        val signInRequest = BeginSignInRequest.Builder()
+            .setGoogleIdTokenRequestOptions(
+                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                    .setSupported(true)
+                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .build()
+            )
+            .setAutoSelectEnabled(true)
+            .build()
+
+        oneTapClient.beginSignIn(signInRequest)
+            .addOnSuccessListener { result ->
+                val intentSenderRequest = IntentSenderRequest.Builder(result.pendingIntent).build()
+                googleSignInLauncher.launch(intentSenderRequest)
+            }
+            .addOnFailureListener { e ->
+                Log.e("MyLog", "Ошибка начала входа через Google", e)
+                Toast.makeText(this, "Ошибка входа через Google", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
+            .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("MyLog", "signInWithCredential:success")
                     val user = auth.currentUser
-                    val email = user?.email ?: "no_email_provided"
-
-                    Log.d("MyLog", "User email: $email")
-
+                    val email = user?.email ?: "no_email"
+                    Log.d("MyLog", "Успешный вход: $email")
                     val intent = Intent(this, Panel::class.java).apply {
-                        putExtra("userEmail", email)  // Передаем email
+                        putExtra("userEmail", email)
                     }
                     startActivity(intent)
                     finish()
                 } else {
-                    Log.w("MyLog", "signInWithCredential:failure", task.exception)
-                    Toast.makeText(this, "Ошибка авторизации через Google", Toast.LENGTH_SHORT).show()
+                    Log.w("MyLog", "Ошибка входа через Google", task.exception)
+                    Toast.makeText(this, "Ошибка входа через Google", Toast.LENGTH_SHORT).show()
                 }
             }
     }

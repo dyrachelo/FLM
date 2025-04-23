@@ -190,6 +190,53 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 6) {
     }
 
     // ========== Goals ==========
+
+    fun setMonthlyGoal(email: String, limit: Double) {
+        val db = writableDatabase
+        // Удаляем старую цель если была
+        db.delete("goals", "userEmail = ?", arrayOf(email))
+        // Добавляем новую
+        val values = ContentValues().apply {
+            put("userEmail", email)
+            put("category", "MONTHLY_TOTAL") // Специальная категория для общего лимита
+            put("expenseLimit", limit)
+            put("period", "month")
+        }
+        db.insert("goals", null, values)
+        db.close()
+    }
+
+    fun getMonthlyGoal(email: String): Double {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT expenseLimit FROM goals WHERE userEmail = ? AND category = 'MONTHLY_TOTAL'",
+            arrayOf(email)
+        )
+        return if (cursor.moveToFirst()) cursor.getDouble(0) else 0.0.also { cursor.close() }
+    }
+    fun getGoals(email: String): List<Goal> {
+        val db = readableDatabase
+        val goals = mutableListOf<Goal>()
+        val cursor = db.rawQuery("SELECT category, expenseLimit, period FROM goals WHERE userEmail = ?", arrayOf(email))
+
+        while (cursor.moveToNext()) {
+            goals.add(
+                Goal(
+                    category = cursor.getString(0),
+                    limit = cursor.getDouble(1),
+                    period = cursor.getString(2)
+                )
+            )
+        }
+        cursor.close()
+        return goals
+    }
+
+    fun deleteGoal(email: String, category: String) {
+        val db = writableDatabase
+        db.delete("goals", "userEmail = ? AND category = ?", arrayOf(email, category))
+        db.close()
+    }
     fun setGoal(email: String, category: String, expenseLimit: Double, period: String) {
         val db = writableDatabase
         val values = ContentValues().apply {
