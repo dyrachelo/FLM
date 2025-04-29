@@ -19,6 +19,8 @@ gmsVersion = "4.4.1"
 bomVersion = "33.0.0"
 
 [libraries]
+firebase-bom = {group = "com.google.firebase", name = "firebase-bom", version.ref = "bomVersion"}
+firebase-firestore = {group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "bomVersion"}
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

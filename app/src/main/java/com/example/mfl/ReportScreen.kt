@@ -1,9 +1,12 @@
 package com.example.mfl
 
 import android.annotation.SuppressLint
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
@@ -19,11 +22,12 @@ import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.utils.ColorTemplate
 import java.text.SimpleDateFormat
+import androidx.compose.ui.graphics.toArgb // Import this
 import java.util.*
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SimpleDateFormat")
 @Composable
 fun ReportScreen(viewModel: ReportViewModel) {
@@ -32,7 +36,14 @@ fun ReportScreen(viewModel: ReportViewModel) {
     var showPieChart by remember { mutableStateOf(true) }
     var showPeriodSelector by remember { mutableStateOf(false) }
 
-    // Загружаем данные при первом отображении
+    // Custom colors
+    val buttonColor = Color.Black
+    val buttonTextColor = Color.White
+    val cardBackground = Color.White
+    val dividerColor = Color.LightGray
+    val textColor = Color.Black
+    val exceededColor = Color.Red
+
     LaunchedEffect(Unit) {
         viewModel.loadMonthlyGoal()
         viewModel.loadExpensesForPeriod(viewModel.selectedPeriod)
@@ -44,27 +55,30 @@ fun ReportScreen(viewModel: ReportViewModel) {
             .statusBarsPadding()
             .padding(16.dp)
     ) {
-        // Блок с бюджетом и лимитом
+        // Budget and limit block
         Card(
             modifier = Modifier.fillMaxWidth(),
-            elevation = 4.dp
+            colors = CardDefaults.cardColors(containerColor = cardBackground),
+            shape = MaterialTheme.shapes.extraSmall,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Общие расходы
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Общие расходы:", style = MaterialTheme.typography.subtitle1)
+                    Text("Общие расходы:",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = textColor)
                     Text(
                         "${"%.2f".format(viewModel.totalExpenses)} Br",
-                        style = MaterialTheme.typography.subtitle1
+                        style = MaterialTheme.typography.titleSmall,
+                        color = textColor
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Блок месячного лимита
                 if (viewModel.monthlyGoal > 0) {
                     val isExceeded = viewModel.totalExpenses > viewModel.monthlyGoal
                     val progress = (viewModel.totalExpenses / viewModel.monthlyGoal).toFloat()
@@ -74,15 +88,15 @@ fun ReportScreen(viewModel: ReportViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Месячный лимит:", style = MaterialTheme.typography.body1)
+                            Text("Месячный лимит:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = textColor)
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     "${"%.2f".format(viewModel.monthlyGoal)} Br",
-                                    color = if (isExceeded) Color.Red else MaterialTheme.colors.onSurface,
-                                    style = MaterialTheme.typography.body1.copy(
-                                        fontWeight = if (isExceeded) FontWeight.Bold else FontWeight.Normal
-                                    )
+                                    color = if (isExceeded) exceededColor else textColor,
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
                                 IconButton(
                                     onClick = {
@@ -91,7 +105,9 @@ fun ReportScreen(viewModel: ReportViewModel) {
                                     },
                                     modifier = Modifier.size(24.dp)
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Изменить лимит")
+                                    Icon(Icons.Default.Edit,
+                                        contentDescription = "Изменить лимит",
+                                        tint = textColor)
                                 }
                             }
                         }
@@ -99,27 +115,33 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         Spacer(modifier = Modifier.height(8.dp))
 
                         LinearProgressIndicator(
-                            progress = progress.coerceAtMost(1f),
+                            progress = { progress.coerceAtMost(1f) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp),
-                            color = if (isExceeded) Color.Red else MaterialTheme.colors.primary,
-                            backgroundColor = MaterialTheme.colors.onSurface.copy(alpha = 0.1f)
+                                .height(4.dp),
+                            color = if (isExceeded) exceededColor else buttonColor,
+                            trackColor = dividerColor
                         )
 
                         if (isExceeded) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 "ПРЕВЫШЕНО НА ${"%.2f".format(viewModel.totalExpenses - viewModel.monthlyGoal)} Br",
-                                color = Color.Red,
-                                modifier = Modifier.align(Alignment.End)
+                                color = exceededColor,
+                                modifier = Modifier.align(Alignment.End),
+                                style = MaterialTheme.typography.labelSmall
                             )
                         }
                     }
                 } else {
                     Button(
                         onClick = { showAddGoalDialog = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonColor,
+                            contentColor = buttonTextColor
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
                     ) {
                         Text("Установить месячный лимит")
                     }
@@ -129,10 +151,15 @@ fun ReportScreen(viewModel: ReportViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Кнопка выбора периода
         OutlinedButton(
             onClick = { showPeriodSelector = !showPeriodSelector },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = buttonTextColor,
+                containerColor = buttonColor
+            ),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
         ) {
             Text(viewModel.getFormattedPeriod(viewModel.selectedPeriod))
         }
@@ -149,9 +176,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Графики расходов
         if (viewModel.expenses.isNotEmpty()) {
-            // Кнопка переключения графиков
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -159,24 +184,30 @@ fun ReportScreen(viewModel: ReportViewModel) {
                 Button(
                     onClick = { showPieChart = !showPieChart },
                     colors = ButtonDefaults.buttonColors(
-                        backgroundColor = if (showPieChart) Color.Gray else MaterialTheme.colors.primary
+                        containerColor = buttonColor,
+                        contentColor = buttonTextColor
                     ),
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp),
+                    shape = MaterialTheme.shapes.extraSmall
                 ) {
-                    Text(if (showPieChart) "Линейный график" else "Круговая диаграмма")
+                    Text(if (showPieChart) "Круговая диаграмма" else "Линейный график")
                 }
             }
 
-            // Отображение выбранного графика
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = 4.dp
+                colors = CardDefaults.cardColors(containerColor = cardBackground),
+                shape = MaterialTheme.shapes.extraSmall,
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         if (showPieChart) "Расходы по категориям" else "Динамика расходов",
-                        style = MaterialTheme.typography.h6
+                        style = MaterialTheme.typography.titleSmall,
+                        color = textColor
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     if (showPieChart) {
                         ExpensePieChart(viewModel.expenses)
@@ -188,16 +219,20 @@ fun ReportScreen(viewModel: ReportViewModel) {
         } else {
             Text(
                 "Нет данных за выбранный период",
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor
             )
         }
     }
 
-    // Диалог установки/изменения лимита
     if (showAddGoalDialog) {
         AlertDialog(
             onDismissRequest = { showAddGoalDialog = false },
-            title = { Text(if (viewModel.monthlyGoal > 0) "Изменить лимит" else "Установить лимит") },
+            title = {
+                Text(if (viewModel.monthlyGoal > 0) "Изменить лимит" else "Установить лимит",
+                    color = textColor)
+            },
             text = {
                 Column {
                     OutlinedTextField(
@@ -205,11 +240,18 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         onValueChange = { monthlyLimitInput = it.filter { c -> c.isDigit() || c == '.' } },
                         label = { Text("Лимит расходов (Br)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = dividerColor,
+                            focusedBorderColor = buttonColor
+                        ),
+                        textStyle = LocalTextStyle.current.copy(color = textColor)
                     )
                     Text(
                         "Текущие расходы: ${"%.2f".format(viewModel.totalExpenses)} Br",
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textColor
                     )
                 }
             },
@@ -222,25 +264,59 @@ fun ReportScreen(viewModel: ReportViewModel) {
                             monthlyLimitInput = ""
                         }
                     },
-                    enabled = monthlyLimitInput.isNotBlank()
+                    enabled = monthlyLimitInput.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonColor,
+                        contentColor = buttonTextColor
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall
                 ) {
                     Text(if (viewModel.monthlyGoal > 0) "Обновить" else "Сохранить")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showAddGoalDialog = false }
+                    onClick = { showAddGoalDialog = false },
+                    shape = MaterialTheme.shapes.extraSmall
                 ) {
-                    Text("Отмена")
+                    Text("Отмена", color = textColor)
                 }
-            }
+            },
+            containerColor = cardBackground
         )
     }
 }
 
+@Composable
+fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {
+    val periods = listOf(
+        "Week" to "week",
+        "Month" to "month",
+        "Quarter" to "quarter",
+        "Half year" to "halfyear",
+        "Year" to "year",
+    )
 
-
-
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = MaterialTheme.shapes.extraSmall,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            periods.forEach { (displayName, periodKey) ->
+                Text(
+                    text = displayName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(periodKey) }
+                        .padding(vertical = 8.dp),
+                    color = if (selected == periodKey) Color.Black else Color.DarkGray
+                )
+                if (periodKey != "year") Divider(color = Color.LightGray, thickness = 0.5.dp)
+            }
+        }
+    }
+}
 
 @Composable
 fun ExpensePieChart(data: Map<String, Double>) {
@@ -249,12 +325,22 @@ fun ExpensePieChart(data: Map<String, Double>) {
             PieChart(context).apply {
                 val entries = data.map { PieEntry(it.value.toFloat(), it.key) }
                 val set = PieDataSet(entries, "Категории").apply {
-                    colors = ColorTemplate.MATERIAL_COLORS.toList()
+                    colors = listOf(
+                        Color(0xFF1E88E5).toArgb(), // Синий
+                        Color(0xFF43A047).toArgb(), // Зеленый
+                        Color(0xFFFDD835).toArgb(), // Желтый
+                        Color(0xFFE53935).toArgb(), // Красный
+                        Color(0xFF8E24AA).toArgb(), // Фиолетовый
+                        Color(0xFFFB8C00).toArgb(), // Оранжевый
+                        Color(0xFF26C6DA).toArgb(), // Бирюзовый
+                        Color(0xFFAB47BC).toArgb()
+                    )
                     valueTextSize = 12f
+                    valueTextColor = android.graphics.Color.BLACK
                 }
                 this.data = PieData(set)
                 description.isEnabled = false
-                legend.isEnabled = true
+                legend.textColor = android.graphics.Color.BLACK
                 setDrawEntryLabels(false)
                 animateY(1000)
             }
@@ -267,65 +353,62 @@ fun ExpensePieChart(data: Map<String, Double>) {
 
 @Composable
 fun ExpenseGrowthChart(transactions: List<Map<String, Any>>) {
-    // Группируем расходы по дням и сортируем по дате
     val dailyExpenses = transactions
         .filter { it["type"] == "expense" }
-        .groupBy { it["date"].toString().substring(0, 10) } // Группируем по дате (YYYY-MM-DD)
+        .groupBy { it["date"].toString().substring(0, 10) }
         .mapValues { (_, expenses) -> expenses.sumOf { it["amount"] as Double } }
-        .toSortedMap() // Сортируем по дате
+        .toSortedMap()
 
-    // Создаем список меток для оси X (дни)
     val dates = dailyExpenses.keys.toList()
 
     AndroidView(
         factory = { context ->
             LineChart(context).apply {
-                // Создаем точки данных
                 val entries = dailyExpenses.values.mapIndexed { index, amount ->
                     Entry(index.toFloat(), amount.toFloat())
                 }
 
                 val dataSet = LineDataSet(entries, "Ежедневные расходы").apply {
-                    color = android.graphics.Color.BLUE
+                    color = android.graphics.Color.BLACK
                     lineWidth = 2f
-                    valueTextSize = 10f
+                    valueTextColor = android.graphics.Color.BLACK
                     setDrawValues(true)
-                    mode = LineDataSet.Mode.CUBIC_BEZIER // Плавные линии
-                    setDrawFilled(true) // Заливка под графиком
-                    fillColor = android.graphics.Color.BLUE
-                    fillAlpha = 50
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    setDrawFilled(true)
+                    fillColor = android.graphics.Color.BLACK
+                    fillAlpha = 30
                 }
 
                 this.data = LineData(dataSet)
 
-                // Настраиваем ось X
                 xAxis.apply {
                     position = XAxis.XAxisPosition.BOTTOM
                     valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
                         override fun getAxisLabel(value: Float, axis: AxisBase?): String {
                             val index = value.toInt()
                             return if (index in dates.indices) {
-                                dates[index].substring(8) // Показываем только день (DD)
+                                dates[index].substring(8)
                             } else {
                                 ""
                             }
                         }
                     }
+                    textColor = android.graphics.Color.BLACK
                     granularity = 1f
                     setDrawGridLines(false)
                 }
 
-                // Настраиваем ось Y
                 axisLeft.apply {
                     setDrawGridLines(true)
-                    axisMinimum = 0f // Начинаем с 0
+                    axisMinimum = 0f
+                    textColor = android.graphics.Color.BLACK
+                    gridColor = android.graphics.Color.LTGRAY
                 }
 
                 axisRight.isEnabled = false
                 description.isEnabled = false
-                legend.isEnabled = true
+                legend.textColor = android.graphics.Color.BLACK
 
-                // Анимация
                 animateX(1000)
                 animateY(1000)
             }
@@ -334,35 +417,4 @@ fun ExpenseGrowthChart(transactions: List<Map<String, Any>>) {
             .fillMaxWidth()
             .height(300.dp)
     )
-}
-
-@Composable
-fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {
-    val periods = listOf(
-        "Week" to "week",
-        "Month" to "month",
-        "Quarter" to "quarter",
-        "Half year" to "halfyear",
-        "Year" to "year",
-        //"All period" to "all"
-    )
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        periods.forEach { (displayName, periodKey) ->
-            Text(
-                text = displayName,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSelect(periodKey) }
-                    .padding(vertical = 8.dp),
-                color = if (selected == periodKey) MaterialTheme.colors.primary else MaterialTheme.colors.onSurface
-            )
-            if (periodKey != "all") Divider()
-        }
-    }
-}
-
-private fun getCurrentMonth(): String {
-    val dateFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-    return dateFormat.format(Date())
 }

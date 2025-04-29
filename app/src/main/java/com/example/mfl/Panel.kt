@@ -15,6 +15,7 @@ class Panel : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContentView(R.layout.activity_panel)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -35,7 +36,7 @@ class Panel : AppCompatActivity() {
 
 
                 R.id.dashboard -> replaceFragment(Dashboard())
-                R.id.history -> replaceFragment(History())
+                R.id.history -> replaceFragment(Debts())
                 R.id.settings -> replaceFragment(Settings())
                 R.id.report -> replaceFragment(Report())
 

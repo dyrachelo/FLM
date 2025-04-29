@@ -9,7 +9,7 @@ import java.util.Calendar
 import java.util.Locale
 
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 6) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 7) {
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("""
