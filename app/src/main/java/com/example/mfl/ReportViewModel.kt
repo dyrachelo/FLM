@@ -4,6 +4,8 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import java.util.*
 import java.text.SimpleDateFormat
+import android.util.Log
+
 
 class ReportViewModel(private val dbHelper: DbHelper, private val email: String) : ViewModel() {
     private var _monthlyGoal by mutableStateOf(0.0)
@@ -43,10 +45,22 @@ class ReportViewModel(private val dbHelper: DbHelper, private val email: String)
     val goals = mutableStateListOf<Goal>()
 
     fun loadGoals() {
-        val goalsFromDb = dbHelper.getGoals(email)
-        goals.clear()
-        goals.addAll(goalsFromDb)
+        val currentEmail = email?.takeIf { it.isNotBlank() }
+        if (currentEmail == null) {
+            Log.e("loadGoals", "Email is null or blank. Cannot load goals.")
+            return
+        }
+
+        val fetchedGoals = dbHelper?.getGoals(currentEmail)
+        if (fetchedGoals != null) {
+            goals.clear()
+            goals.addAll(fetchedGoals)
+        } else {
+            Log.w("loadGoals", "No goals found for user: $currentEmail")
+        }
     }
+
+
 
     fun addGoal(category: String, limit: Double, period: String) {
         dbHelper.setGoal(email, category, limit, period)

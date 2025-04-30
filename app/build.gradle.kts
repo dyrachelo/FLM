@@ -56,15 +56,16 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:30.1.0"))  // Используем Firebase BOM для всех зависимостей Firebase
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-database-ktx") // Firebase Realtime Database (если нужен)
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))  // Обновленная версия BOM
+    implementation("com.google.firebase:firebase-auth-ktx")  // Добавлен -ktx
+    implementation("com.google.firebase:firebase-firestore-ktx")  // Добавлен -ktx
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")  // Добавлен -ktx
 
-    // Google Sign-In (для аутентификации через Google)
+    // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("androidx.credentials:credentials:1.2.0")
+
     // Compose
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.material3:material3")
@@ -72,11 +73,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
-    implementation("androidx.navigation:navigation-compose:2.6.0")
-    implementation("androidx.activity:activity-compose:1.7.2")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.5.1")
-    implementation ("androidx.compose.ui:ui:1.4.0") // Check for the latest version
-
+    implementation("androidx.navigation:navigation-compose:2.7.5")
+    implementation("androidx.activity:activity-compose:1.8.2")  // Обновленная версия
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.compose.material:material-icons-extended")  // Для иконок
 
     // Other dependencies
     implementation("androidx.fragment:fragment-ktx:1.6.2")

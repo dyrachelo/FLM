@@ -3,4 +3,17 @@
     <string name="default_web_client_id">1023227618320-s10edn9a4klk0300euqiavc9217v1br3.apps.googleusercontent.com</string>
     <string name="period_labels">Месяц|Квартал|Полгода|Год</string>
     <string name="loginString">LOGIN</string>
+    <string name="settings_title">Настройки</string>
+    <string name="general_settings">Общие настройки</string>
+    <string name="privacy_policy">Политика конфиденциальности</string>
+    <string name="contact_support">Техподдержка</string>
+    <string name="view_messages">Сообщения пользователей</string>
+    <string name="logout">Выйти из аккаунта</string>
+    <string name="support_hint">Опишите вашу проблему:</string>
+    <string name="your_message">Ваше сообщение</string>
+    <string name="send">Отправить</string>
+    <string name="cancel">Отмена</string>
+    <string name="admin_settings">Администрирование</string>
+    <string name="user_management">Управление пользователями</string>
+    <string name="system_settings">Системные настройки</string>
 </resources>

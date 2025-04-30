@@ -14,8 +14,4 @@ data class UserInfo(
     var transportExpense: Double = 0.0,
     var travelExpense: Double = 0.0
 )
-data class Goal(
-    val category: String,
-    val limit: Double,
-    val period: String
-)
+

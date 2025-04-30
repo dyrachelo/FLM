@@ -7,9 +7,10 @@ import android.database.sqlite.SQLiteOpenHelper
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import com.example.mfl.Goal
 
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 7) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 8) {
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("""
@@ -249,35 +250,6 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 7) {
         db.close()
     }
 
-    fun checkGoalExceeded(email: String, category: String, startDate: String, endDate: String): Boolean {
-        val db = readableDatabase
-
-        val goalCursor = db.rawQuery("""
-            SELECT expenseLimit FROM goals 
-            WHERE userEmail = ? AND category = ?
-        """, arrayOf(email, category))
-
-        if (goalCursor.moveToFirst()) {
-            val goalLimit = goalCursor.getDouble(0)
-
-            val sumCursor = db.rawQuery("""
-                SELECT SUM(amount) FROM transactions
-                WHERE userEmail = ? AND category = ? AND type = 'expense'
-                AND date BETWEEN ? AND ?
-            """, arrayOf(email, category, startDate, endDate))
-
-            if (sumCursor.moveToFirst()) {
-                val totalSpent = sumCursor.getDouble(0)
-                goalCursor.close()
-                sumCursor.close()
-                return totalSpent > goalLimit
-            }
-            sumCursor.close()
-        }
-
-        goalCursor.close()
-        return false
-    }
 
     // ========== Debts ==========
     fun addDebt(email: String, debtorName: String, amount: Double, date: String) {
@@ -376,6 +348,50 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 7) {
             null
         }
     }
+// Добавьте эти методы в класс DbHelper
 
+    fun getAllTransactions(email: String): List<Transaction> {
+        val db = readableDatabase
+        val list = mutableListOf<Transaction>()
+        val cursor = db.rawQuery("SELECT * FROM transactions WHERE userEmail = ?", arrayOf(email))
+
+        while (cursor.moveToNext()) {
+            list.add(
+                Transaction(
+                    id = cursor.getInt(cursor.getColumnIndexOrThrow("id")),
+                    userEmail = cursor.getString(cursor.getColumnIndexOrThrow("userEmail")),
+                    type = cursor.getString(cursor.getColumnIndexOrThrow("type")),
+                    category = cursor.getString(cursor.getColumnIndexOrThrow("category")),
+                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount")),
+                    date = cursor.getString(cursor.getColumnIndexOrThrow("date")),
+                    note = cursor.getString(cursor.getColumnIndexOrThrow("note"))
+                )
+            )
+        }
+
+        cursor.close()
+        return list
+    }
+
+    data class Transaction(
+        val id: Int,
+        val userEmail: String,
+        val type: String,
+        val category: String,
+        val amount: Double,
+        val date: String,
+        val note: String?
+    )
+
+
+
+    data class Debt(
+        val id: Int,
+        val userEmail: String,
+        val debtorName: String,
+        val amount: Double,
+        val date: String,
+        val isPaid: Int
+    )
 
 }

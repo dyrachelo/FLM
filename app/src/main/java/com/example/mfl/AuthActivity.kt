@@ -1,6 +1,9 @@
 package com.example.mfl
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -18,19 +21,22 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.database.FirebaseDatabase
 
 class AuthActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var oneTapClient: SignInClient
+    private lateinit var syncHelper: FirebaseSyncHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_auth)
-
+        // Инициализация Firebase
         auth = FirebaseAuth.getInstance()
         oneTapClient = Identity.getSignInClient(this)
+        syncHelper = FirebaseSyncHelper(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -64,11 +70,31 @@ class AuthActivity : AppCompatActivity() {
         }
     }
 
+    private fun isOnline(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Синхронизация при возвращении в приложение
+        if (isOnline()) {
+            syncHelper.syncAllData()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
-        auth.currentUser?.let {
+        auth.currentUser?.let { user ->
+            // Синхронизируем данные перед переходом в Panel
+            if (isOnline()) {
+                syncHelper.syncAllData()
+            }
+
             val intent = Intent(this, Panel::class.java).apply {
-                putExtra("userEmail", it.email ?: "email_not_available")
+                putExtra("userEmail", user.email ?: "email_not_available")
             }
             startActivity(intent)
             finish()
@@ -80,6 +106,10 @@ class AuthActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d("MyLog", "Авторизация успешна")
+                    // Синхронизируем данные после успешной авторизации
+                    if (isOnline()) {
+                        syncHelper.syncAllData()
+                    }
                     val intent = Intent(this, Panel::class.java)
                     intent.putExtra("userEmail", email)
                     startActivity(intent)
@@ -139,6 +169,10 @@ class AuthActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     val email = user?.email ?: "no_email"
                     Log.d("MyLog", "Успешный вход: $email")
+                    // Синхронизируем данные после успешной авторизации
+                    if (isOnline()) {
+                        syncHelper.syncAllData()
+                    }
                     val intent = Intent(this, Panel::class.java).apply {
                         putExtra("userEmail", email)
                     }
