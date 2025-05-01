@@ -22,6 +22,7 @@ class FirebaseSyncHelper(private val context: Context) {
     private val prefs = context.getSharedPreferences("SyncPrefs", Context.MODE_PRIVATE)
 
 
+
     fun syncAllData() {
         val user = auth.currentUser ?: return
         val userId = user.uid
@@ -29,8 +30,12 @@ class FirebaseSyncHelper(private val context: Context) {
 
         if (!isOnline()) return
 
+        // Сначала синхронизируем локальные данные в Firebase
         syncLocalToFirebase(userId, email)
+
+        // Затем синхронизируем данные из Firebase
         syncFirebaseToLocal(userId, email)
+
     }
 
     private fun isOnline(): Boolean {
@@ -118,6 +123,37 @@ class FirebaseSyncHelper(private val context: Context) {
 
         // 5. Синхронизация category_expenses
         syncCategoryExpenses(userId, email)
+        // Синхронизация feedback
+
+    }
+    fun syncFeedbackFromFirebase() {
+        if (!isOnline()) return
+
+        database.getReference("feedback")
+            .orderByChild("status")
+            .equalTo("pending")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val dbHelper = DbHelper(context)
+
+                    snapshot.children.forEach { feedbackSnapshot ->
+                        val firebaseId = feedbackSnapshot.key ?: return@forEach
+                        val userEmail = feedbackSnapshot.child("userEmail").getValue(String::class.java) ?: return@forEach
+                        val message = feedbackSnapshot.child("message").getValue(String::class.java) ?: return@forEach
+                        val timestamp = feedbackSnapshot.child("timestamp").getValue(Long::class.java) ?: return@forEach
+
+                        // Сохраняем firebaseId в локальной базе
+                        dbHelper.addFeedbackWithFirebaseId(firebaseId, userEmail, message, timestamp)
+
+                        // Помечаем как прочитанные в Firebase
+                        feedbackSnapshot.ref.child("status").setValue("read")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Sync", "Feedback sync error", error.toException())
+                }
+            })
     }
 
     private fun syncCategoryExpenses(userId: String, email: String) {
@@ -138,6 +174,67 @@ class FirebaseSyncHelper(private val context: Context) {
         }
         cursor.close()
     }
+    fun sendFeedbackToFirebase(email: String, message: String) {
+        if (!isOnline()) return
+
+        val feedbackRef = database.getReference("feedback")
+        feedbackRef.push().setValue(
+            mapOf(
+                "userEmail" to email,
+                "message" to message,
+                "timestamp" to System.currentTimeMillis(),
+                "status" to "pending"
+            )
+        )
+    }
+
+
+
+    fun getFeedbackFromFirebase(
+        onSuccess: (List<Feedback>) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        database.getReference("feedback")
+            .orderByChild("timestamp")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val feedbacks = snapshot.children.mapNotNull { it.toFeedback() }
+                    onSuccess(feedbacks)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onError(error.message)
+                }
+            })
+    }
+    private fun DataSnapshot.toFeedback(): Feedback? {
+        return try {
+            Feedback(
+                id = key ?: return null,
+                userEmail = child("userEmail").getValue(String::class.java) ?: return null,
+                message = child("message").getValue(String::class.java) ?: return null,
+                timestamp = child("timestamp").getValue(Long::class.java) ?: return null,
+                status = child("status").getValue(String::class.java) ?: "pending"
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+    // Обновляем метод markFeedbackAsResolved
+    fun markFeedbackAsResolved(firebaseId: String, onSuccess: () -> Unit = {}) {
+        if (!isOnline()) return
+
+        database.getReference("feedback/$firebaseId/status").setValue("resolved")
+            .addOnSuccessListener {
+                onSuccess() // Теперь это корректный вызов переданного callback
+            }
+            .addOnFailureListener { e ->
+                Log.e("Feedback", "Error marking feedback as resolved", e)
+            }
+    }
+
 
     private fun syncFirebaseToLocal(userId: String, email: String) {
         // 1. Синхронизация userInfo
@@ -278,5 +375,27 @@ class FirebaseSyncHelper(private val context: Context) {
                 Log.e("FirebaseSync", "Error syncing category_expenses: ${error.message}")
             }
         })
-    }
-}
+
+        // 6. Синхронизация feedback (только для админа)
+        if (email == "vitopuk87@gmail.com") {
+            database.getReference("feedback")
+                .orderByChild("status")
+                .equalTo("pending")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        for (feedbackSnapshot in snapshot.children) {
+                            val userEmail = feedbackSnapshot.child("userEmail").getValue(String::class.java) ?: continue
+                            val message = feedbackSnapshot.child("message").getValue(String::class.java) ?: continue
+                            val timestamp = feedbackSnapshot.child("timestamp").getValue(Long::class.java) ?: continue
+
+                            dbHelper.addFeedback(userEmail, message)
+                            feedbackSnapshot.ref.child("status").setValue("read")
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("FirebaseSync", "Error syncing feedback: ${error.message}")
+                    }
+                })
+        }
+    }}

@@ -16,4 +16,12 @@
     <string name="admin_settings">Администрирование</string>
     <string name="user_management">Управление пользователями</string>
     <string name="system_settings">Системные настройки</string>
+    <string name="feedback_title">Обратная связь</string>
+    <string name="feedback_hint">Опишите ваши впечатления о приложении</string>
+    <string name="feedback_message_hint">Ваш отзыв</string>
+    <string name="send_button">Отправить</string>
+    <string name="cancel_button">Отмена</string>
+    <string name="user_feedback_section">Отзывы пользователей</string>
+    <string name="mark_as_resolved">Пометить как решенное</string>
+    <string name="resolved_status">✓ Решено</string>
 </resources>

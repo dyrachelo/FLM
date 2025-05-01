@@ -10,11 +10,11 @@ import java.util.Locale
 import com.example.mfl.Goal
 
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 8) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 13) {
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("""
-        CREATE TABLE userInfo (
+        CREATE TABLE IF NOT EXISTS userInfo (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT NOT NULL UNIQUE,
             cash REAL NOT NULL,
@@ -22,7 +22,17 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 8) {
             income REAL DEFAULT 0,
             total_expenses REAL DEFAULT 0
         )
-    """.trimIndent())
+        """.trimIndent())
+
+        db?.execSQL("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userEmail TEXT NOT NULL,
+            message TEXT NOT NULL,
+            timestamp LONG NOT NULL,
+            status TEXT DEFAULT 'pending'
+        )
+        """.trimIndent())
 
         db?.execSQL("""
             CREATE TABLE transactions (
@@ -71,6 +81,10 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 8) {
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 12) {
+            // Only add the new column if upgrading from version < 12
+            db?.execSQL("ALTER TABLE feedback ADD COLUMN firebaseId TEXT DEFAULT ''")
+        }
         db?.execSQL("DROP TABLE IF EXISTS userInfo")
         db?.execSQL("DROP TABLE IF EXISTS transactions")
         db?.execSQL("DROP TABLE IF EXISTS goals")
@@ -393,5 +407,100 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "MFL", null, 8) {
         val date: String,
         val isPaid: Int
     )
+
+    // Добавим методы для работы с отзывами
+    fun addFeedback(email: String, message: String): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("userEmail", email)
+            put("message", message)
+            put("timestamp", System.currentTimeMillis())
+            put("status", "pending")
+        }
+        return db.insert("feedback", null, values)
+    }
+
+
+
+    fun updateFeedbackFirebaseId(localId: Int, firebaseId: String) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("firebaseId", firebaseId)
+            put("status", "synced")
+        }
+        db.update("feedback", values, "id = ?", arrayOf(localId.toString()))
+    }
+
+
+    fun markFeedbackAsSynced(id: Int) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("status", "synced")
+        }
+        db.update("feedback", values, "id = ?", arrayOf(id.toString()))
+    }
+
+    fun getFeedbackIds(): List<String> {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT firebaseId FROM feedback WHERE firebaseId IS NOT NULL", null)
+
+        return buildList {
+            while (cursor.moveToNext()) {
+                add(cursor.getString(0))
+            }
+        }.also { cursor.close() }
+    }
+
+    fun addFeedbackWithId(firebaseId: String, userEmail: String, message: String, timestamp: Long) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("firebaseId", firebaseId)
+            put("userEmail", userEmail)
+            put("message", message)
+            put("timestamp", timestamp)
+            put("status", "read")
+        }
+        db.insertWithOnConflict("feedback", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+// В классе DbHelper добавим:
+
+    // Обновляет статус отзыва
+    fun updateFeedbackStatus(id: Int, status: String) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("status", status)
+        }
+        db.update("feedback", values, "id = ?", arrayOf(id.toString()))
+    }
+
+    // Добавляет отзыв с указанным firebaseId
+    fun addFeedbackWithFirebaseId(firebaseId: String, email: String, message: String, timestamp: Long): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("firebaseId", firebaseId)
+            put("userEmail", email)
+            put("message", message)
+            put("timestamp", timestamp)
+            put("status", "pending")
+        }
+        return db.insert("feedback", null, values)
+    }
+
+    // Получает ID всех синхронизированных отзывов
+    fun getSyncedFeedbackIds(): List<String> {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT firebaseId FROM feedback WHERE firebaseId IS NOT NULL AND firebaseId != ''",
+            null
+        )
+        val ids = mutableListOf<String>()
+        while (cursor.moveToNext()) {
+            cursor.getString(0)?.let { ids.add(it) }
+        }
+        cursor.close()
+        return ids
+    }
+
 
 }
