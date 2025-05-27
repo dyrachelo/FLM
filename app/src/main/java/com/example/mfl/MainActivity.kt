@@ -65,8 +65,8 @@ class MainActivity : ComponentActivity() {
 fun RegistrationScreen(auth: FirebaseAuth) {
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") } // Новое состояние для подтверждения пароля
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -83,33 +83,6 @@ fun RegistrationScreen(auth: FirebaseAuth) {
             color = Color.Black,
             modifier = Modifier.padding(bottom = 32.dp)
         )
-
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Логин", color = Color.Black) },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color.Black) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                containerColor = Color.White,
-                cursorColor = Color.Black,
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Gray,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Gray,
-                disabledTextColor = Color.Gray,
-                disabledBorderColor = Color.Gray,
-                disabledLabelColor = Color.Gray,
-                errorBorderColor = Color.Red,
-                errorLabelColor = Color.Red
-            ),
-            shape = RoundedCornerShape(4.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = email,
@@ -144,28 +117,64 @@ fun RegistrationScreen(auth: FirebaseAuth) {
             onPasswordChange = { password = it }
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Поле для подтверждения пароля
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтвердите пароль", color = Color.Black) },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Black) },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                containerColor = Color.White,
+                cursorColor = Color.Black,
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.Gray,
+                focusedLabelColor = Color.Black,
+                unfocusedLabelColor = Color.Gray,
+                disabledTextColor = Color.Gray,
+                disabledBorderColor = Color.Gray,
+                disabledLabelColor = Color.Gray,
+                errorBorderColor = Color.Red,
+                errorLabelColor = Color.Red
+            ),
+            shape = RoundedCornerShape(4.dp)
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                if (username.isBlank() || email.isBlank() || password.isBlank()) {
-                    errorMessage = "Не все поля заполнены"
-                } else if (!isPasswordValid(password)) {
-                    errorMessage = "Пароль не соответствует требованиям"
-                } else {
-                    isLoading = true
-                    errorMessage = null
-                    auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-                            isLoading = false
-                            if (task.isSuccessful) {
-                                Log.d("MyLog", "Регистрация успешна")
-                                signIn(auth, email, password, context)
-                            } else {
-                                errorMessage = task.exception?.message ?: "Ошибка регистрации"
-                                Log.d("MyLog", "Ошибка регистрации: ${task.exception?.message}")
+                when {
+                    email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                        errorMessage = "Не все поля заполнены"
+                    }
+                    password != confirmPassword -> {
+                        errorMessage = "Пароли не совпадают"
+                    }
+                    !isPasswordValid(password) -> {
+                        errorMessage = "Пароль не соответствует требованиям"
+                    }
+                    else -> {
+                        isLoading = true
+                        errorMessage = null
+                        auth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                isLoading = false
+                                if (task.isSuccessful) {
+                                    Log.d("MyLog", "Регистрация успешна")
+                                    signIn(auth, email, password, context)
+                                } else {
+                                    errorMessage = task.exception?.message ?: "Ошибка регистрации"
+                                    Log.d("MyLog", "Ошибка регистрации: ${task.exception?.message}")
+                                }
                             }
-                        }
+                    }
                 }
             },
             modifier = Modifier

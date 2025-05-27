@@ -22,7 +22,12 @@ import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.utils.ColorTemplate
 import java.text.SimpleDateFormat
-import androidx.compose.ui.graphics.toArgb // Import this
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import java.util.*
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,7 +41,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
     var showPieChart by remember { mutableStateOf(true) }
     var showPeriodSelector by remember { mutableStateOf(false) }
 
-    // Custom colors
     val buttonColor = Color.Black
     val buttonTextColor = Color.White
     val cardBackground = Color.White
@@ -48,12 +52,14 @@ fun ReportScreen(viewModel: ReportViewModel) {
         viewModel.loadMonthlyGoal()
         viewModel.loadExpensesForPeriod(viewModel.selectedPeriod)
     }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .padding(16.dp)
+            .verticalScroll(scrollState) // Добавляем возможность скролла
     ) {
         // Budget and limit block
         Card(
@@ -216,6 +222,26 @@ fun ReportScreen(viewModel: ReportViewModel) {
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = cardBackground),
+                shape = MaterialTheme.shapes.extraSmall,
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "История расходов",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = textColor
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ExpenseHistoryList(transactions = viewModel.expensesRaw)
+                }
+            }
         } else {
             Text(
                 "Нет данных за выбранный период",
@@ -350,7 +376,55 @@ fun ExpensePieChart(data: Map<String, Double>) {
             .height(300.dp)
     )
 }
+@Composable
+fun ExpenseHistoryList(transactions: List<Map<String, Any>>) {
+    val expenseTransactions = transactions
+        .filter { it["type"] == "expense" }
+        .sortedByDescending { it["date"].toString() }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+        expenseTransactions.forEach { transaction ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = MaterialTheme.shapes.small,
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = transaction["category"].toString(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                                .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                    .parse(transaction["date"].toString())),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.DarkGray
+                        )
+                    }
+
+                    Text(
+                        text = "-${"%.2f".format(transaction["amount"] as Double)} Br",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 @Composable
 fun ExpenseGrowthChart(transactions: List<Map<String, Any>>) {
     val dailyExpenses = transactions

@@ -18,10 +18,6 @@ class FirebaseSyncHelper(private val context: Context) {
     private val dbHelper = DbHelper(context)
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private val prefs = context.getSharedPreferences("SyncPrefs", Context.MODE_PRIVATE)
-
-
 
     fun syncAllData() {
         val user = auth.currentUser ?: return
@@ -29,11 +25,7 @@ class FirebaseSyncHelper(private val context: Context) {
         val email = user.email ?: return
 
         if (!isOnline()) return
-
-        // Сначала синхронизируем локальные данные в Firebase
         syncLocalToFirebase(userId, email)
-
-        // Затем синхронизируем данные из Firebase
         syncFirebaseToLocal(userId, email)
 
     }

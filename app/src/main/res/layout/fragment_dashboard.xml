@@ -22,7 +22,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Income"
+                android:text="Доход"
                 android:textColor="#121212"                android:textSize="18sp"
                 android:layout_marginTop="30dp"/>
 
@@ -63,7 +63,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Accounts"
+                android:text="Кошельки"
                 android:textColor="#121212"                android:textSize="18sp"
                 android:layout_marginTop="16dp"/>
 
@@ -119,7 +119,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Expenses"
+                android:text="Расходы"
                 android:textColor="#121212"                android:textSize="18sp"
                 android:layout_marginTop="16dp"/>
 
